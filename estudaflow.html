@@ -3,8 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EstudaFlow — Gestão Acadêmica</title>
+<title>StudyStation — Gestão Acadêmica</title>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="a11y.css">
+<script src="api.js"></script>
 <style>
   :root {
     --bg: #0d0f14;
@@ -244,7 +246,7 @@
 <!-- AUTH SCREEN -->
 <div id="auth-screen">
   <div class="auth-card">
-    <div class="auth-logo">✦ EstudaFlow</div>
+    <div class="auth-logo">✦ StudyStation</div>
     <div class="auth-tagline">Seu ecossistema de aprendizado acadêmico</div>
     <div class="auth-tabs">
       <div class="auth-tab active" onclick="switchAuthTab('login')">Entrar</div>
@@ -259,7 +261,7 @@
       <div class="form-group"><label>Nome completo</label><input type="text" id="reg-name" placeholder="Seu nome" /></div>
       <div class="form-group"><label>E-mail</label><input type="email" id="reg-email" placeholder="seu@email.com" /></div>
       <div class="form-group"><label>Curso</label><input type="text" id="reg-curso" placeholder="Ex: Ciência da Computação" /></div>
-      <div class="form-group"><label>Senha</label><input type="password" id="reg-pass" placeholder="Min. 6 caracteres" /></div>
+      <div class="form-group"><label>Senha</label><input type="password" id="reg-pass" placeholder="Min. 8 caracteres" /></div>
       <button class="btn-primary" onclick="doRegister()">Criar conta gratuita</button>
     </div>
   </div>
@@ -269,7 +271,7 @@
 <div id="app">
   <div class="sidebar">
     <div class="sidebar-logo">
-      <span>✦ EstudaFlow</span>
+      <span>✦ StudyStation</span>
       <small>Plataforma Acadêmica</small>
     </div>
     <nav class="sidebar-nav">
@@ -303,7 +305,7 @@
         <div class="stat-card blue"><div class="stat-icon">📄</div><div class="stat-value" id="dash-docs">3</div><div class="stat-label">Documentos criados</div></div>
         <div class="stat-card purple"><div class="stat-icon">🎯</div><div class="stat-value" id="dash-metas">2/5</div><div class="stat-label">Metas concluídas</div></div>
         <div class="stat-card green"><div class="stat-icon">📅</div><div class="stat-value" id="dash-eventos">4</div><div class="stat-label">Eventos esta semana</div></div>
-        <div class="stat-card yellow"><div class="stat-icon">📚</div><div class="stat-value">12</div><div class="stat-label">Livros na biblioteca</div></div>
+        <div class="stat-card yellow"><div class="stat-icon">📚</div><div class="stat-value" id="dash-livros">12</div><div class="stat-label">Livros na biblioteca</div></div>
       </div>
       <div class="grid-2">
         <div class="card">
@@ -476,9 +478,14 @@
     <div class="form-group"><label>Data</label><input type="date" id="ev-data" /></div>
     <div class="form-group"><label>Horário</label><input type="time" id="ev-hora" /></div>
     <div class="form-group"><label>Tipo</label>
-      <select id="ev-tipo"><option value="blue">Aula</option><option value="purple">Prova</option><option value="green">Entrega</option><option value="yellow">Estudo</option></select>
+      <select id="ev-tipo">
+        <option value="aula">Aula</option>
+        <option value="prova">Prova</option>
+        <option value="entrega">Entrega</option>
+        <option value="estudo">Estudo</option>
+      </select>
     </div>
-    <button class="btn-primary" onclick="addEvento()">Adicionar ao Cronograma</button>
+    <button class="btn-add" onclick="addEvento()">Adicionar</button>
   </div>
 </div>
 
@@ -497,35 +504,14 @@
 <script>
 // STATE
 let currentUser = null;
-let metas = [
-  { id:1, nome:'Estudar para prova de Cálculo', disciplina:'Matemática', prazo:'2025-04-10', prioridade:'urgente', done:false },
-  { id:2, nome:'Finalizar relatório de BD', disciplina:'Banco de Dados', prazo:'2025-04-05', prioridade:'normal', done:false },
-  { id:3, nome:'Exercícios de Algoritmos', disciplina:'Computação', prazo:'2025-03-30', prioridade:'normal', done:true },
-  { id:4, nome:'Ler capítulos de SO', disciplina:'Sistemas Operacionais', prazo:'2025-04-08', prioridade:'baixa', done:false },
-  { id:5, nome:'Preparar slides do PI', disciplina:'Projeto Integrador', prazo:'2025-04-15', prioridade:'urgente', done:false },
-];
-let eventos = [
-  { id:1, titulo:'Aula de Cálculo', data: getTodayPlus(1), hora:'08:00', tipo:'blue' },
-  { id:2, titulo:'Prova de BD', data: getTodayPlus(2), hora:'14:00', tipo:'purple' },
-  { id:3, titulo:'Entrega do PI', data: getTodayPlus(4), hora:'23:59', tipo:'green' },
-  { id:4, titulo:'Estudo Redes', data: getTodayPlus(0), hora:'19:00', tipo:'yellow' },
-];
-let arquivos = [
-  { nome:'Mapa - Redes.flow', tipo:'🗺️', tamanho:'24 KB', data:'Hoje' },
-  { nome:'Notas Cálculo III.doc', tipo:'📝', tamanho:'18 KB', data:'Ontem' },
-  { nome:'Planilha Notas.xls', tipo:'📊', tamanho:'32 KB', data:'2 dias' },
-  { nome:'Mapa - SO Conceitos.flow', tipo:'🗺️', tamanho:'21 KB', data:'3 dias' },
-];
-let books = [
-  { titulo:'Cálculo — James Stewart', autor:'James Stewart', area:'matematica', icon:'📘', tags:['Cálculo','Análise','Limites'] },
-  { titulo:'Introdução à Computação', autor:'Forouzan & Mosharraf', area:'computacao', icon:'💻', tags:['Computação','Algoritmos'] },
-  { titulo:'Fundamentos de Física I', autor:'Halliday & Resnick', area:'fisica', icon:'⚡', tags:['Mecânica','Física'] },
-  { titulo:'Algoritmos — CLRS', autor:'Cormen, Leiserson et al.', area:'computacao', icon:'🔵', tags:['Algoritmos','Estruturas de Dados'] },
-  { titulo:'Álgebra Linear', autor:'Boldrini, Costa et al.', area:'matematica', icon:'📗', tags:['Álgebra','Matrizes','Vetores'] },
-  { titulo:'Sistemas Operacionais', autor:'Tanenbaum', area:'computacao', icon:'🖥️', tags:['SO','Processos','Memória'] },
-  { titulo:'Física para Cientistas II', autor:'Serway & Jewett', area:'fisica', icon:'🔬', tags:['Eletromagnetismo','Óptica'] },
-  { titulo:'Compiladores — Aho', autor:'Aho, Lam, Sethi, Ullman', area:'linguagens', icon:'📙', tags:['Compiladores','Parsing'] },
-];
+
+let metas = [];
+let filtroMetas = 'todas';
+
+let arquivos = [];
+
+let books = [];
+let filtroBib = 'todos', queryBib = '';
 let currentWeekOffset = 0;
 let mindmapNodes = [];
 let selectedNode = null;
@@ -542,46 +528,77 @@ function switchAuthTab(tab) {
   document.getElementById('register-form').style.display = tab==='register'?'block':'none';
 }
 
-function doLogin() {
+function mensagemErro(e) {
+  if (e && e.dados && e.dados.errors) return Object.values(e.dados.errors)[0][0];
+  if (e && e.dados && e.dados.message) return e.dados.message;
+  return 'Não consegui falar com o servidor. O php artisan serve está rodando?';
+}
+
+function voltarParaLogin() {
+  currentUser = null;
+  metas = [];
+  eventos = [];
+  books = [];
+  metas = [];
+  arquivos = [];
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('auth-screen').style.display = 'flex';
+}
+
+function tratarErro(e) {
+  if (e && e.status === 401) {
+    voltarParaLogin();
+    showToast('Sessão expirada, entre de novo');
+    return;
+  }
+  showToast(mensagemErro(e));
+}
+
+async function doLogin() {
   const email = document.getElementById('login-email').value.trim();
   const pass = document.getElementById('login-pass').value;
   if (!email || !pass) { showToast('Preencha todos os campos'); return; }
-  const saved = JSON.parse(localStorage.getItem('ef_users')||'[]');
-  const user = saved.find(u=>u.email===email && u.pass===pass);
-  if (user) { launchApp(user); return; }
-  // demo login
-  if (email && pass.length >= 4) { launchApp({nome:email.split('@')[0], email, curso:'Estudante'}); return; }
-  showToast('Credenciais inválidas');
+  try {
+    const user = await fazerLogin(email, pass);
+    launchApp(user);
+  } catch (e) { showToast(mensagemErro(e)); }
 }
 
-function doRegister() {
+async function doRegister() {
   const nome = document.getElementById('reg-name').value.trim();
   const email = document.getElementById('reg-email').value.trim();
   const curso = document.getElementById('reg-curso').value.trim();
   const pass = document.getElementById('reg-pass').value;
-  if (!nome||!email||!pass) { showToast('Preencha todos os campos'); return; }
-  if (pass.length < 6) { showToast('Senha deve ter 6+ caracteres'); return; }
-  const saved = JSON.parse(localStorage.getItem('ef_users')||'[]');
-  saved.push({nome,email,curso,pass});
-  localStorage.setItem('ef_users', JSON.stringify(saved));
-  launchApp({nome,email,curso});
+  if (!nome || !email || !pass) { showToast('Preencha todos os campos'); return; }
+  if (pass.length < 8) { showToast('Senha deve ter 8+ caracteres'); return; }
+  try {
+    const dados = await api('/register', {
+      method: 'POST',
+      body: JSON.stringify({ name: nome, email, curso, password: pass, password_confirmation: pass }),
+    });
+    localStorage.setItem('token', dados.token);
+    launchApp(dados.user);
+  } catch (e) { showToast(mensagemErro(e)); }
 }
 
 function launchApp(user) {
   currentUser = user;
   document.getElementById('auth-screen').style.display = 'none';
   document.getElementById('app').style.display = 'block';
-  const first = user.nome.split(' ')[0];
+  const first = (user.name || 'Estudante').split(' ')[0];
   document.getElementById('sidebar-name').textContent = first;
   document.getElementById('sidebar-avatar').textContent = first[0].toUpperCase();
   document.getElementById('dash-name').textContent = first;
-  renderMetas(); renderCronograma(); renderArquivos(); renderBiblioteca();
+  carregarMetas();
+  carregarEventos();
+  carregarLivros();
+  carregarArquivos();
+  
 }
 
-function doLogout() {
-  currentUser = null;
-  document.getElementById('auth-screen').style.display = 'flex';
-  document.getElementById('app').style.display = 'none';
+async function doLogout() {
+  await fazerLogout();
+  voltarParaLogin();
 }
 
 // NAV
@@ -606,7 +623,9 @@ function showToast(msg) {
 }
 
 // FERRAMENTAS
-function openTool(tipo) {
+function openTool(tipo, editando =false) {
+  if (!editando) docEditandoId = null;
+  if (!editando) mapaEditandoId = null;
   const titles = { mapa:'🗺️ Mapa Mental', planilha:'📊 Planilha', documento:'📝 Documento', apresentacao:'🖼️ Apresentação' };
   document.getElementById('tool-modal-title').textContent = titles[tipo];
   document.getElementById('tool-modal-body').innerHTML = buildTool(tipo);
@@ -674,6 +693,10 @@ function initMindmap() {
     canvas.width = canvas.offsetWidth;
     canvas.height = canvas.offsetHeight || 420;
     canvas.onclick = mmClick;
+    canvas.onmousedown = mmDown;
+    canvas.onmousemove = mmMove;
+    canvas.onmouseup = mmUp;
+    canvas.onmouseleave = mmUp;
     drawMM();
   }, 100);
 }
@@ -694,6 +717,30 @@ function mmClick(e) {
   if(mmMode_state==='move' && hit) { selectedNode = hit; drawMM(); return; }
   if(!hit) selectedNode=null;
   drawMM();
+  let arrastando = null;
+
+  
+function posCanvas(e) {
+  const rect = document.getElementById('mindmap-canvas').getBoundingClientRect();
+  return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+}
+
+function mmDown(e) {
+  if (mmMode_state !== 'move') return;
+  const p = posCanvas(e);
+  const hit = mindmapNodes.find(n => Math.hypot(n.x - p.x, n.y - p.y) < 36);
+  if (hit) { arrastando = hit; selectedNode = hit; drawMM(); }
+}
+
+function mmMove(e) {
+  if (!arrastando) return;
+  const p = posCanvas(e);
+  arrastando.x = p.x;
+  arrastando.y = p.y;
+  drawMM();
+}
+
+function mmUp() { arrastando = null; }
 }
 
 function drawMM() {
@@ -721,7 +768,29 @@ function drawMM() {
     else { ctx.fillText(words[0], n.x, n.y-7); ctx.fillText(words.slice(1).join(' '), n.x, n.y+7); }
   });
 }
+let arrastando = null;
 
+function posCanvas(e) {
+  const rect = document.getElementById('mindmap-canvas').getBoundingClientRect();
+  return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+}
+
+function mmDown(e) {
+  if (mmMode_state !== 'move') return;
+  const p = posCanvas(e);
+  const hit = mindmapNodes.find(n => Math.hypot(n.x - p.x, n.y - p.y) < 36);
+  if (hit) { arrastando = hit; selectedNode = hit; drawMM(); }
+}
+
+function mmMove(e) {
+  if (!arrastando) return;
+  const p = posCanvas(e);
+  arrastando.x = p.x;
+  arrastando.y = p.y;
+  drawMM();
+}
+
+function mmUp() { arrastando = null; }
 function mmClear() { if(confirm('Limpar o mapa?')) { mindmapNodes=[]; selectedNode=null; drawMM(); } }
 
 // PLANILHA
@@ -762,22 +831,101 @@ function renderSlides() {
 }
 
 // SAVE TOOL
-function saveTool(tipo) {
+let docEditandoId = null;
+let mapaEditandoId = null;
+
+async function abrirArquivo(id) {
+  const f = arquivos.find(a => a.id === id);
+  if (!f) return;
+
+  if (f.tipo !== 'documento' || !f.documento) {
+    showToast('Esse tipo de arquivo ainda não abre aqui');
+    return;
+  }
+
+  try {
+    const doc = await DocumentosAPI.ver(f.documento.id);
+    openTool('documento', true);
+    docEditandoId = doc.id; mapaEdiandoId = null;
+    document.getElementById('tool-modal-title').textContent = '📝 ' + doc.nome;
+    document.getElementById('doc-title').value = doc.nome.replace(/\.doc$/, '');
+    document.getElementById('doc-body').value = doc.corpo || '';
+  } catch (e) {
+    tratarErro(e);
+  }
+}
+
+async function saveTool(tipo) {
   let nome = '';
   if(tipo==='mapa') nome = (document.getElementById('mm-title').value||'Mapa Mental')+'.flow';
   if(tipo==='planilha') nome = (document.getElementById('pl-title').value||'Planilha')+'.xls';
   if(tipo==='documento') nome = (document.getElementById('doc-title').value||'Documento')+'.doc';
   if(tipo==='apresentacao') nome = (document.getElementById('ap-title').value||'Apresentação')+'.pptx';
-  const icons = {mapa:'🗺️', planilha:'📊', documento:'📝', apresentacao:'🖼️'};
-  arquivos.unshift({ nome, tipo: icons[tipo], tamanho: Math.floor(Math.random()*40+10)+' KB', data:'Agora' });
-  renderArquivos();
-  document.getElementById('dash-docs').textContent = arquivos.length;
+
+  if (tipo === 'documento') {
+    const corpo = document.getElementById('doc-body').value;
+    try {
+      if (docEditandoId) await DocumentosAPI.atualizar(docEditandoId, { nome, corpo });
+      else await DocumentosAPI.criar({ nome, corpo });
+      await carregarArquivos();
+    } catch (e) { tratarErro(e); return; }
+  } else if (tipo === 'mapa') {
+    const nos = mindmapNodes.map(n => ({
+      ref: n.id, parent_ref: n.parent, label: n.label,
+      x: Math.round(n.x), y: Math.round(n.y), cor: n.color
+    }));
+    try {
+      if (mapaEditandoId) await MapasAPI.atualizar(mapaEditandoId, { nome, nos });
+      else await MapasAPI.criar({ nome, nos });
+      await carregarArquivos();
+    } catch (e) { tratarErro(e); return; }
+  } else {
+    // temporário: planilha e apresentação ainda são locais
+    arquivos.unshift({ nome, tipo, tamanho_kb: Math.floor(Math.random()*40+10), created_at: new Date().toISOString() });
+    renderArquivos();
+  }
   closeModal('modal-tool');
   showToast('✅ "'+nome+'" salvo em Arquivos!');
 }
 
+async function abrirArquivo(id) {
+  const f = arquivos.find(a => a.id === id); if (!f) return;
+  try {
+    if (f.tipo === 'documento' && f.documento) {
+      const doc = await DocumentosAPI.ver(f.documento.id);
+      openTool('documento');
+      docEditandoId = doc.id;
+      document.getElementById('tool-modal-title').textContent = '📝 ' + doc.nome;
+      document.getElementById('doc-title').value = doc.nome.replace(/\.doc$/, '');
+      document.getElementById('doc-body').value = doc.corpo || '';
+    } else if (f.tipo === 'mapa' && f.mapa_mental) {
+      const mapa = await MapasAPI.ver(f.mapa_mental.id);
+      openTool('mapa');
+      mapaEditandoId = mapa.id;
+      document.getElementById('tool-modal-title').textContent = '🗺️ ' + mapa.nome;
+      document.getElementById('mm-title').value = mapa.nome.replace(/\.flow$/, '');
+      mindmapNodes = mapa.nos.map(n => ({
+        id: n.id, parent: n.parent_id, label: n.label,
+        x: n.x, y: n.y, color: n.cor || '#6c8cff'
+      }));
+    } else {
+      showToast('Esse tipo de arquivo ainda não abre aqui');
+    }
+  } catch (e) { tratarErro(e); }
+}
+
 // METAS
-function renderMetas(filter='todas') {
+function esc(t) { const d = document.createElement('div'); d.textContent = t ?? ''; return d.innerHTML; }
+
+async function carregarMetas() {
+  try {
+    const lista = await MetasAPI.listar();
+    metas = lista.map(m => ({ ...m, done: !!m.done, prazo: m.prazo ? String(m.prazo).substring(0, 10) : null }));
+    renderMetas();
+  } catch (e) { tratarErro(e); }
+}
+
+function renderMetas(filter = filtroMetas) {
   const list = document.getElementById('metas-list'); if(!list) return;
   const filtered = filter==='todas' ? metas : filter==='concluida' ? metas.filter(m=>m.done) : filter==='pendente' ? metas.filter(m=>!m.done) : metas.filter(m=>m.prioridade==='urgente'&&!m.done);
   const badges = { normal:'badge-blue', urgente:'badge-red', baixa:'badge-green' };
@@ -786,8 +934,8 @@ function renderMetas(filter='todas') {
     <div class="meta-item">
       <div class="meta-check ${m.done?'done':''}" onclick="toggleMeta(${m.id})">${m.done?'✓':''}</div>
       <div class="meta-info">
-        <div class="meta-name ${m.done?'done':''}">${m.nome}</div>
-        <div class="meta-detail">${m.disciplina} · prazo: ${formatDate(m.prazo)}</div>
+        <div class="meta-name ${m.done?'done':''}">${esc(m.nome)}</div>
+        <div class="meta-detail">${esc(m.disciplina)} · prazo: ${formatDate(m.prazo)}</div>
       </div>
       <span class="meta-badge ${badges[m.prioridade]}">${badgeLabel[m.prioridade]}</span>
       <button class="btn-sm" style="padding:5px 10px;font-size:.75rem" onclick="delMeta(${m.id})">✕</button>
@@ -796,27 +944,45 @@ function renderMetas(filter='todas') {
 }
 
 function filterMetas(f, btn) {
+  filtroMetas = f;
   document.querySelectorAll('#page-metas .mm-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
   renderMetas(f);
 }
 
-function addMeta() {
+async function addMeta() {
   const nome = document.getElementById('meta-nome').value.trim();
   const disc = document.getElementById('meta-disciplina').value.trim();
   const prazo = document.getElementById('meta-prazo').value;
   const pri = document.getElementById('meta-prioridade').value;
   if(!nome) { showToast('Digite o nome da meta'); return; }
-  metas.push({ id: Date.now(), nome, disciplina: disc||'Geral', prazo: prazo||getTodayPlus(7), prioridade: pri, done: false });
-  closeModal('modal-meta');
-  document.getElementById('meta-nome').value=''; document.getElementById('meta-disciplina').value=''; document.getElementById('meta-prazo').value='';
-  renderMetas(); showToast('✅ Meta criada!');
+  try {
+    await MetasAPI.criar({ nome, disciplina: disc || 'Geral', prazo: prazo || getTodayPlus(7), prioridade: pri });
+    closeModal('modal-meta');
+    document.getElementById('meta-nome').value=''; document.getElementById('meta-disciplina').value=''; document.getElementById('meta-prazo').value='';
+    carregarMetas();
+    carregarEventos();
+    showToast('✅ Meta criada!');
+  } catch (e) { tratarErro(e); }
 }
 
-function toggleMeta(id) {
-  const m = metas.find(m=>m.id===id); if(m) { m.done=!m.done; renderMetas(); showToast(m.done?'🎉 Meta concluída!':'Meta reaberta'); }
+async function toggleMeta(id) {
+  const m = metas.find(m=>m.id===id); if(!m) return;
+  const novo = !m.done;
+  try {
+    await MetasAPI.atualizar(id, { done: novo });
+    carregarMetas();
+    carregarEventos();
+    showToast(novo ? '🎉 Meta concluída!' : 'Meta reaberta');
+  } catch (e) { tratarErro(e); }
 }
-function delMeta(id) { metas = metas.filter(m=>m.id!==id); renderMetas(); }
+
+async function delMeta(id) {
+  try {
+    await MetasAPI.apagar(id);
+     carregarMetas();
+  } catch (e) { tratarErro(e); }
+}
 function updateDashMetas() {
   const done = metas.filter(m=>m.done).length;
   document.getElementById('dash-metas').textContent = done+'/'+metas.length;
@@ -824,21 +990,43 @@ function updateDashMetas() {
 function formatDate(d) { if(!d) return '—'; const [y,m,day]=d.split('-'); return `${day}/${m}/${y}`; }
 
 // CRONOGRAMA
+let eventos = [];  
+const CHIP_POR_TIPO = { aula: 'blue', prova: 'purple', entrega: 'green', estudo: 'yellow' };
+
+function isoLocal(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+async function carregarEventos() {
+  try {
+    const lista = await EventosAPI.listar();
+    eventos = Array.isArray(lista) ? lista : (lista.data || []);
+  } catch (e) {
+    eventos = [];
+    showToast('Não consegui carregar os eventos');
+  }
+  renderCronograma();
+}
+
 function renderCronograma() {
   const today = new Date();
   const monday = new Date(today);
-  monday.setDate(today.getDate() - today.getDay() + 1 + currentWeekOffset*7);
+  const diaSemana = (today.getDay() + 6) % 7; // seg=0 ... dom=6
+  monday.setDate(today.getDate() - diaSemana + currentWeekOffset*7);
   const days = ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
   const grid = document.getElementById('week-grid'); if(!grid) return;
   const dates = Array.from({length:7},(_,i)=>{ const d=new Date(monday); d.setDate(monday.getDate()+i); return d; });
   document.getElementById('semana-label').textContent = `${formatDate2(dates[0])} – ${formatDate2(dates[6])}`;
   grid.innerHTML = dates.map((d,i)=>{
     const isToday = d.toDateString()===today.toDateString();
-    const dayEvs = eventos.filter(ev=>ev.data===d.toISOString().split('T')[0]);
+    const dia = isoLocal(d);
+    const dayEvs = eventos.filter(ev => String(ev.data).slice(0,10) === dia);
     return `<div class="day-col">
       <div class="day-header">${days[i]}</div>
       <div class="day-number ${isToday?'today':''}">${d.getDate()}</div>
-      ${dayEvs.map(ev=>`<div class="event-chip chip-${ev.tipo}" title="${ev.hora}">${ev.titulo}</div>`).join('')}
+      ${dayEvs.map(ev=>`<div class="event-chip chip-${CHIP_POR_TIPO[ev.tipo] || 'blue'}"
+        title="${String(ev.hora || '').slice(0,5)} · clique para apagar"
+        onclick="apagarEvento(${ev.id})">${esc(ev.titulo)}</div>`).join('')}
     </div>`;
   }).join('');
   document.getElementById('dash-eventos').textContent = eventos.length;
@@ -847,61 +1035,109 @@ function renderCronograma() {
 function formatDate2(d) { return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`; }
 function semanaNav(d) { if(d===0) currentWeekOffset=0; else currentWeekOffset+=d; renderCronograma(); }
 
-function addEvento() {
+async function addEvento() {
   const titulo = document.getElementById('ev-titulo').value.trim();
   const data = document.getElementById('ev-data').value;
   const hora = document.getElementById('ev-hora').value;
   const tipo = document.getElementById('ev-tipo').value;
   if(!titulo||!data) { showToast('Preencha título e data'); return; }
-  eventos.push({ id:Date.now(), titulo, data, hora: hora||'00:00', tipo });
-  closeModal('modal-evento');
-  document.getElementById('ev-titulo').value=''; document.getElementById('ev-data').value='';
-  renderCronograma(); showToast('📅 Evento adicionado!');
+  try {
+    await EventosAPI.criar({ titulo, data, hora: hora || '00:00', tipo });
+    closeModal('modal-evento');
+    document.getElementById('ev-titulo').value=''; document.getElementById('ev-data').value='';
+    await carregarEventos();
+    showToast('📅 Evento adicionado!');
+  } catch (e) {
+    showToast((e.dados && e.dados.message) || 'Erro ao salvar o evento');
+  }
+}
+
+async function apagarEvento(id) {
+  if (!confirm('Apagar este evento?')) return;
+  try {
+    await EventosAPI.apagar(id);
+    await carregarEventos();
+    showToast('🗑️ Evento apagado');
+  } catch (e) {
+    showToast('Erro ao apagar o evento');
+  }
 }
 
 // ARQUIVOS
+const ICONES = { mapa:'🗺️', documento:'📝', planilha:'📊', apresentacao:'🖼️' };
+
+async function carregarArquivos() {
+  try {
+    const lista = await ArquivosAPI.listar();
+    arquivos = Array.isArray(lista) ? lista : (lista.data || []);
+  } catch (e) { tratarErro(e); return; }
+  renderArquivos();
+}
+
 function renderArquivos() {
   const g = document.getElementById('files-grid'); if(!g) return;
-  g.innerHTML = arquivos.map(f=>`
-    <div class="file-card">
-      <div class="file-icon-big">${f.tipo}</div>
-      <div class="file-name">${f.nome}</div>
-      <div class="file-meta">${f.tamanho} · ${f.data}</div>
-    </div>`).join('');
+  g.innerHTML = arquivos.length ? arquivos.map(f=>`
+    <div class="file-card" onclick="abrirArquivo(${f.id})">
+      <div class="file-icon-big">${ICONES[f.tipo] || '📄'}</div>
+      <div class="file-name">${esc(f.nome)}</div>
+      <div class="file-meta">${f.tamanho_kb ?? 0} KB · ${formatDate(String(f.created_at).substring(0,10))}</div>
+    </div>`).join('') : '<div style="color:var(--text3);font-size:.85rem">Nenhum arquivo ainda</div>';
+  document.getElementById('dash-docs').textContent = arquivos.filter(a => a.tipo === 'documento').length;
 }
 
 // BIBLIOTECA
+async function carregarLivros() {
+  try {
+    books = await LivrosAPI.listar();
+    document.getElementById('dash-livros').textContent = books.length;
+  } catch (e) { tratarErro(e); return; }
+  renderBiblioteca(filtroBib, queryBib);
+}
+
 function renderBiblioteca(filter='todos', query='') {
+  filtroBib = filter; queryBib = query;
   const list = document.getElementById('books-list'); if(!list) return;
   let filtered = books;
   if(filter!=='todos') filtered = filtered.filter(b=>b.area===filter);
   if(query) filtered = filtered.filter(b=>b.titulo.toLowerCase().includes(query.toLowerCase())||b.autor.toLowerCase().includes(query.toLowerCase())||b.tags.some(t=>t.toLowerCase().includes(query.toLowerCase())));
   list.innerHTML = filtered.length ? filtered.map(b=>`
     <div class="book-card">
-      <div class="book-cover" style="background:var(--surface2)">${b.icon}</div>
+      <div class="book-cover" style="background:var(--surface2)">${esc(b.icon)}</div>
       <div class="book-info">
-        <div class="book-title">${b.titulo}</div>
-        <div class="book-author">${b.autor}</div>
-        <div class="book-tags">${b.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div>
+        <div class="book-title">${esc(b.titulo)}</div>
+        <div class="book-author">${esc(b.autor)}</div>
+        <div class="book-tags">${b.tags.map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>
       </div>
-      <button class="btn-sm" style="flex-shrink:0;align-self:center" onclick="showToast('📚 Adicionado à lista de leitura!')">+ Lista</button>
+      <button class="btn-sm" style="flex-shrink:0;align-self:center" onclick="toggleLista(${b.id})">${b.na_lista ? '✓ Na lista' : '+ Lista'}</button>
     </div>`).join('') : '<div style="text-align:center;color:var(--text3);padding:40px">Nenhum resultado encontrado</div>';
 }
 
-function filterBib(f, btn) {
-  document.querySelectorAll('#page-biblioteca .mm-btn').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
-  renderBiblioteca(f);
-}
-
-function buscarLivros() {
-  const q = document.getElementById('bib-search').value.trim();
-  renderBiblioteca('todos', q);
-  if(q) showToast('🔍 Buscando por "'+q+'"');
+async function toggleLista(id) {
+  const livro = books.find(b => b.id === id); if (!livro) return;
+  try {
+    if (livro.na_lista) {
+      await LivrosAPI.removerDaLista(id);
+      livro.na_lista = false;
+      showToast('Removido da lista de leitura');
+    } else {
+      await LivrosAPI.adicionarNaLista(id);
+      livro.na_lista = true;
+      showToast('📚 Adicionado à lista de leitura!');
+    }
+    renderBiblioteca(filtroBib, queryBib);
+  } catch (e) { tratarErro(e); }
 }
 
 // INIT
-renderMetas(); renderArquivos(); renderBiblioteca();
+renderArquivos();
+(async function iniciar() {
+  if (!getToken()) return;
+  try {
+    const user = await api('/user');
+    launchApp(user);
+  } catch (e) { /* token inválido: fica na tela de login */ }
+})();
 </script>
+<script src="a11y.js"></script>
 </body>
 </html>
