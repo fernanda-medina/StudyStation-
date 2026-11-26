@@ -16,7 +16,7 @@ class ProgressoMetaTest extends TestCase
         $resultado = $calculadora->percentual(concluidas: 3, total: 4);
 
         // Assert
-        $this->assertSame(80, $resultado);
+        $this->assertSame(75, $resultado);
     }
 
     public function test_meta_sem_tarefas_tem_progresso_zero(): void
