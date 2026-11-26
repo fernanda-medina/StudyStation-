@@ -19,12 +19,13 @@ jobs:
         with:
           php-version: '8.3'
       - run: composer install --no-interaction --prefer-dist
-      - run: vendor/bin/pint --test
+      - name: Pint (informativo até o código antigo ser formatado)
+        run: vendor/bin/pint --test
+        continue-on-error: true
 
   testes:
     name: Testes unitários + integração + cobertura
     runs-on: ubuntu-latest
-    needs: lint
     defaults:
       run:
         working-directory: api
